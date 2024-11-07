@@ -1,9 +1,32 @@
+import { useState } from 'react';
 import { Header } from '../../components/Header'
 import { ItemList } from '../../components/ItemList';
 import background from '../../assets/background.png'
 import './styles.css'
 
 function App() {
+  const [user, setUser] = useState('');
+  const [currentUser, setCurrentUser] = useState(null);
+  const [repos, setRepos] = useState(null);
+
+  const handleGetData = async () => {
+    const userData = await fetch(`https://api.github.com/users/${user}`);
+    const newUser = await userData.json();
+
+    if (newUser.name) {
+      const { avatar_url, name, login, bio } = newUser;
+      setCurrentUser({ avatar_url, name, login, bio })
+    }
+
+    const reposData = await fetch(`https://api.github.com/users/${user}/repos`);
+    const newRepos = await reposData.json();
+
+    if (newRepos.length) {
+      setRepos(newRepos);
+    }
+
+  };
+
 
   return (
       <div>
@@ -12,26 +35,33 @@ function App() {
           <img src={background} alt="Logo do GitHub" className='background' />
           <div className="info">
             <div>
-              <input name='usuario' placeholder='Digite o nome do usuario' />
-              <button>Buscar</button>
+              <input name='usuario' value={ user }
+                onChange={ event => setUser(event.target.value) }
+                placeholder='Digite o nome do usuario' 
+              />
+              <button onClick={ handleGetData }>Buscar</button>
             </div>
-            <div className='perfil'>
-              <img src="https://avatars.githubusercontent.com/u/100943409?v=4" 
-              alt="Imagem de perfil" 
-              className='perfil-imagem'/>
-              <div>
-                <h3>Patrick Marques</h3>
-                <span>@PkMs7</span>
-                <p>Descrição</p>
+            { currentUser?.name ? ( 
+            <>
+              <div className='perfil'>
+                <img src={ currentUser.avatar_url } 
+                alt="Imagem de perfil" 
+                className='perfil-imagem'/>
+                <div>
+                  <h3>{ currentUser.name }</h3>
+                  <span>{ currentUser.login }</span>
+                  <p>{ currentUser.bio }</p>
+                </div>
               </div>
-            </div>
-            <hr />
-            <div>
-              <h4 className="repositorio">Repositórios</h4>
-              <ItemList title={"Teste1"} description={"Teste de descrição"} />
-              <ItemList title={"Teste1"} description={"Teste de descrição"} />
-              <ItemList title={"Teste1"} description={"Teste de descrição"} />
-            </div>
+              <hr />
+            </>
+            ) : null }
+              { repos?.length ? (
+                <>
+                  <h4 className="repositorio">Repositórios</h4>
+                  { repos.map(repo => <ItemList title={ repo.name } description={ repo.description } />) }
+                </>
+              ) : null }
           </div>
         </div>
       </div>
